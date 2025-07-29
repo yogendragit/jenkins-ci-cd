@@ -1,49 +1,40 @@
 node {
     def appDir = "/var/www/next-app"
+
     stage('Cleanup') {
-        echo 'Cleaning up...'
+        echo 'Cleaning up workspace...'
         deleteDir()
     }
-    stage('Checkout from git') {
+
+    stage('Checkout') {
         git branch: 'main', url: 'https://github.com/yogendragit/jenkins-ci-cd'
     }
+
     stage('Test') {
         echo 'No tests to run.'
     }
 
-    stage('Build') {
-    echo 'Installing dependencies and building app...'
-    sh """
-        npm install
-        npm run build
-    """
-}
+    stage('Deploy') {
+        echo 'Deploying Next.js app...'
+        sh """
+            # Ensure target directory
+            sudo mkdir -p ${appDir}
+            sudo chown -R jenkins:jenkins ${appDir}
 
-stage('Deploy') {
-    echo 'Deploying...'
-    sh """
-        sudo mkdir -p ${appDir}
-        sudo chown -R jenkins:jenkins ${appDir}
+            # Copy full source code
+            rsync -av --delete ./ ${appDir}/
 
-        # Copy build output
-        rsync -av --delete .next/ ${appDir}/.next/
-        rsync -av --delete public/ ${appDir}/public/
-        rsync -av package.json ${appDir}/
-        rsync -av package-lock.json ${appDir}/
-        rsync -av node_modules/ ${appDir}/node_modules/
+            # Build and run app
+            cd ${appDir}
+            npm install
+            npm run build
 
-        # Kill app on port 3000 if any
-        sudo fuser -k 3000/tcp || true
+            # Stop old app
+            pm2 stop next-app || true
 
-        # Run app in background (nohup) as jenkins user
-        cd ${appDir}
-        pm2 stop next-app || true
-        npm install
-        npm run build
-        pm2 start npm --name "next-app" -- run start -- -H 0.0.0.0 -p 3000
-        pm2 save
-    """
-}
-
-
+            # Start app
+            pm2 start npm --name "next-app" -- run start -- -H 0.0.0.0 -p 3000
+            pm2 save
+        """
+    }
 }
