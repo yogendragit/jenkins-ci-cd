@@ -37,7 +37,11 @@ stage('Deploy') {
 
         # Run app in background (nohup) as jenkins user
         cd ${appDir}
-        nohup npm run start -- -H 0.0.0.0 -p 3000 > app.log 2>&1 &
+        pm2 stop next-app || true
+        npm install
+        npm run build
+        pm2 start npm --name "next-app" -- run start -- -H 0.0.0.0 -p 3000
+        pm2 save
     """
 }
 
