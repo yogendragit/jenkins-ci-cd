@@ -28,7 +28,9 @@ node {
             # Copy built files to deployment directory
             rsync -av --delete .next/ ${appDir}/.next/
             rsync -av --delete public/ ${appDir}/public/
-            rsync -av package.json next.config.js ${appDir}/
+            if [ -f next.config.js ]; then
+                rsync -av next.config.js /var/www/next-app/
+            fi
 
             # Stop existing process on port 3000 if any
             sudo fuser -k 3000/tcp || true
