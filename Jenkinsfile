@@ -19,7 +19,6 @@ node {
         sh """
             sudo mkdir -p ${appDir}
             sudo chown -R jenkins:jenkins ${appDir}
-            --exclude='.git'
             --exclude='node_modules' ./${appDir}
             cd ${appDir}
             sudo npm install
