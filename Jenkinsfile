@@ -5,13 +5,18 @@ node {
         deleteDir()
     }
     stage('Checkout from git') {
-        // Clone the repo
         git branch: 'main', url: 'https://github.com/yogendragit/jenkins-ci-cd'
     }
     stage('Test') {
-        // Optional: add tests if available
-        // sh 'npm test'
         echo 'No tests to run.'
+    }
+
+    stage('Build') {
+        echo 'Installing dependencies and building app...'
+        sh '''
+            npm install
+            npm run build
+        '''
     }
 
     stage('Deploy') {
@@ -19,14 +24,18 @@ node {
         sh """
             sudo mkdir -p ${appDir}
             sudo chown -R jenkins:jenkins ${appDir}
-            cd ${appDir}
-            sudo npm install
-            sudo npm run build
-            sudo fuser -k 3000/tcp || true
-            npm run start
 
+            # Copy built files to deployment directory
+            rsync -av --delete .next/ ${appDir}/.next/
+            rsync -av --delete public/ ${appDir}/public/
+            rsync -av package.json next.config.js ${appDir}/
+
+            # Stop existing process on port 3000 if any
+            sudo fuser -k 3000/tcp || true
+
+            # Start app in background (consider using PM2 for production)
+            cd ${appDir}
+            nohup npm run start > app.log 2>&1 &
         """
     }
-
-    
 }
