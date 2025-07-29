@@ -33,8 +33,8 @@ node {
             pm2 stop next-app || true
 
             # Start app
-            pm2 start npm --name "next-app" -- run start -- -H 0.0.0.0 -p 3000
-            pm2 save
+           pm2 start node_modules/next/dist/bin/next --name "next-app" -- start -H 0.0.0.0 -p 3000
+           pm2 save
         """
     }
 }
