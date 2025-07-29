@@ -20,7 +20,15 @@ node {
             sudo mkdir -p ${appDir}
             sudo chown -R jenkins:jenkins ${appDir}
             
-            rsync -av --delete .next/ ${appDir}
+           # Sync build output and assets
+            if [ -d ".next" ]; then
+                rsync -av .next/ /var/www/next-app/.next/
+                else
+                echo "Build folder .next not found"
+                exit 1
+            fi
+            rsync -av --delete public/ /var/www/next-app/public/
+            rsync -av package.json next.config.js /var/www/next-app/
             --exclude='.git'
             --exclude='node_modules' ./${appDir}
             cd ${appDir}
