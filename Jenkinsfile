@@ -20,7 +20,7 @@ node {
             sudo mkdir -p ${appDir}
             sudo chown -R jenkins:jenkins ${appDir}
             
-            rsync -av --delete 
+            rsync -av --delete .next/ ${appDir}
             --exclude='.git'
             --exclude='node_modules' ./${appDir}
             cd ${appDir}
