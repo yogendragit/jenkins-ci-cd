@@ -20,24 +20,29 @@ node {
     }
 
     stage('Deploy') {
-        echo 'Deploying...'
-        sh """
-            sudo mkdir -p ${appDir}
-            sudo chown -R jenkins:jenkins ${appDir}
+    echo 'Deploying...'
+    sh """
+        sudo mkdir -p ${appDir}
+        sudo chown -R jenkins:jenkins ${appDir}
+        # Sync files to deployment directory
+        rsync -av --delete .next/ ${appDir}/.next/
+        rsync -av --delete public/ ${appDir}/public/
+        rsync -av package.json ${appDir}/
+        rsync -av package-lock.json ${appDir}/ || true
+        if [ -f next.config.js ]; then
+            rsync -av next.config.js ${appDir}/
+        fi
 
-            # Copy built files to deployment directory
-            rsync -av --delete .next/ ${appDir}/.next/
-            rsync -av --delete public/ ${appDir}/public/
-            if [ -f next.config.js ]; then
-                rsync -av next.config.js /var/www/next-app/
-            fi
+        # Install dependencies inside appDir as jenkins user (not sudo)
+        cd ${appDir}
+        npm install
 
-            # Stop existing process on port 3000 if any
-            sudo fuser -k 3000/tcp || true
+        # Kill any app running on port 3000
+        sudo fuser -k 3000/tcp || true
 
-            # Start app in background (consider using PM2 for production)
-            cd ${appDir}
-            nohup npm run start > app.log 2>&1 &
-        """
-    }
+        # Start the app in background (nohup) as jenkins user
+        nohup npm run start -- -H 0.0.0.0 -p 3000 > app.log 2>&1 &
+    """
+}
+
 }
