@@ -18,8 +18,7 @@ node {
         echo 'Deploying...'
         sh """
             sudo mkdir -p ${appDir}
-            sudo chown -R
-            jenkins:jenkins ${appDir}
+            sudo chown -R jenkins:jenkins ${appDir}
             
             rsync -av --delete 
             --exclude='.git'
